@@ -66,6 +66,7 @@ const stop = (state) => ({
 	isStarted: false,
 	isStopping: false,
 	stoppingBounceCount: 0,
+	isStopped: true,
 });
 
 const getMidpoint = (state) => state.maxMarginLeft / 2;
@@ -115,6 +116,7 @@ const startStopping = (state) => ({
 const start = (state) => ({
 	...state,
 	isStarted: true,
+	isStopped: false,
 });
 
 /**
@@ -123,11 +125,13 @@ const start = (state) => ({
  * yet reached the midpoint, we want to continue moving the light until it rests at the midpoint.
  */
 const shouldMoveLightbar = (state) =>
-	state.isStarted || state.isStopping || !getIsAtMidpoint(state, 0.25);
+	!state.isStopped &&
+	(state.isStarted || state.isStopping || !getIsAtMidpoint(state, 0.25));
 
 export const initialState = {
 	isStarted: false,
 	isStopping: false,
+	isStopped: false,
 	stoppingBounceCount: 0,
 	speed: 1000,
 	movementDirection: "right",
@@ -140,6 +144,10 @@ export const initialState = {
 export const reducer = (state, action) => {
 	switch (action.type) {
 		case REQUEST_ANIMATION_FRAME_DELTA: {
+			if (state.isStarted && state.isStopped) {
+				return moveLightbar(start(state), action.delta);
+			}
+
 			if (shouldMoveLightbar(state)) {
 				return moveLightbar(state, action.delta);
 			}
